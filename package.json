@@ -1,0 +1,42 @@
+{
+  "name": "eth-revert-reason",
+  "version": "1.0.0",
+  "description": "Get the revert reason from an Ethereum transaction hash",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "test": "jest test/*.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/authereum/eth-revert-reason"
+  },
+  "bugs": {
+    "url": "https://github.com/authereum/eth-revert-reason/issues"
+  },
+  "homepage": "https://github.com/authereum/eth-revert-reason",
+  "author": {
+    "name": "Shane Fontaine",
+    "email": "shane6fontaine@gmail.com",
+    "url": "https://authereum.com/"
+  },
+  "license": {
+    "type": "MIT",
+    "url": "https://github.com/authereum/eth-revert-reason/blob/master/LICENSE"
+  },
+  "dependencies": {
+    "ethers": "^4.0.46"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "jest": "^25.4.0",
+    "mocha": "^7.1.1",
+    "standard": "^14.3.3"
+  },
+  "keywords": [
+    "ethereum",
+    "revert",
+    "string",
+    "transaction"
+  ]
+}
