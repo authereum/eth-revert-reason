@@ -35,8 +35,7 @@
   "devDependencies": {
     "chai": "^4.2.0",
     "jest": "^25.4.0",
-    "mocha": "^7.1.1",
-    "standard": "^14.3.3"
+    "mocha": "^7.1.1"
   },
   "keywords": [
     "ethereum",

@@ -29,12 +29,16 @@ console.log(await getRevertReason(txHash, network)) // Please use a provider tha
 
 ## Notes
 1. Because Kovan uses Parity, it is not possible to get the error message without a provider that exposes Parity's `trace` methods. Because of this, Kovan revert reasons require a custom provider to be passed in.
-2. (See Future Work) There are rare cases where a revert reason may be 'x' from the context of one block but it will be 'y' from the context of another block. This may cause inconsistencies. In the future, this package will allow the calling from the context of a specific block, however this will require a provider with a full archival node.
+2. There are rare cases where a revert reason may be 'x' from the context of one block but it will be 'y' from the context of another block. This may cause inconsistencies.
+3. For now, this only works with Infura nodes.
 
 ## Future work
 The following features will be added over time:
 
-1. The ability to get the revert message from the context of a specific block
+1. A better way to determine whether or not a node is full-archival.
+2. A better way to determine whether or not a node exposes Parity `trace` methods.
+3. Limit the number of calls made by the provider.
+4. Support providers other than Infura.
 
 ## Test
 
