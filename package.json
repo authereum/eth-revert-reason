@@ -5,6 +5,9 @@
   "main": "index.js",
   "types": "index.d.ts",
   "scripts": {
+    "publish-module": "npm publish --access public",
+    "dist-tag": "npm dist-tag add \"eth-revert-reason@$(jq -r .version <package.json)\" latest",
+    "release": "npm test && npm run publish-module && npm run dist-tag",
     "test": "jest test/*.js"
   },
   "repository": {
@@ -17,13 +20,15 @@
   "homepage": "https://github.com/authereum/eth-revert-reason",
   "author": {
     "name": "Shane Fontaine",
-    "email": "shane6fontaine@gmail.com",
+    "email": "shane.fontaine@authereum.com",
     "url": "https://authereum.com/"
   },
-  "license": {
-    "type": "MIT",
-    "url": "https://github.com/authereum/eth-revert-reason/blob/master/LICENSE"
-  },
+  "contributors": [
+    "Miguel Mota <miguel.mota@authereum.com>",
+    "Chris Whinfrey <chris.whinfrey@authereum.com>",
+    "Adam Hanna <adam.hanna@authereum.com>"
+  ],
+  "license": "MIT",
   "dependencies": {
     "ethers": "^4.0.46"
   },
