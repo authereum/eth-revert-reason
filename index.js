@@ -24,7 +24,7 @@ async function getRevertReason (txHash, network = 'mainnet', customProvider = un
     // This will truncate all 0s and set up the hex string as expected
     let codeString = `0x${code.substr(138)}`.replace(/0+$/, '')
 
-    // If the codeStrig is an odd number of characters, add a trailing 0
+    // If the codeString is an odd number of characters, add a trailing 0
     if (codeString.length % 2 === 1) {
       codeString += '0'
     }
