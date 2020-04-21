@@ -88,13 +88,13 @@ describe('getRevertReason', () => {
     describe('kovan', () => {
       const _network = 'kovan'
       test('authereum transaction', async () => {
-        catchReversion(TX_HASH.FAILED_AUTHEREUM_TX.KOVAN, _network, REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE)
+        await catchReversion(TX_HASH.FAILED_AUTHEREUM_TX.KOVAN, _network, REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE)
       })
       test('random transaction', async () => {
-        catchReversion(TX_HASH.FAILED_RANDOM_TX.KOVAN, _network, REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE)
+        await catchReversion(TX_HASH.FAILED_RANDOM_TX.KOVAN, _network, REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE)
       })
       test('failure with no revert reason', async () => {
-        catchReversion(TX_HASH.NO_REVERT_MSG.KOVAN, _network, REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE)
+        await catchReversion(TX_HASH.NO_REVERT_MSG.KOVAN, _network, REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE)
       })
     })
     describe('goerli', () => {
@@ -153,16 +153,16 @@ describe('getRevertReason', () => {
     describe('kovan', () => {
       const _network = 'kovan'
       test('successful transaction', async () => {
-        catchReversion(TX_HASH.SUCCESSFUL_TX.KOVAN, _network, REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE)
+        await catchReversion(TX_HASH.SUCCESSFUL_TX.KOVAN, _network, REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE)
       })
       test('out of gas', async () => {
-        catchReversion(TX_HASH.OUT_OF_GAS.KOVAN, _network, REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE)
+        await catchReversion(TX_HASH.OUT_OF_GAS.KOVAN, _network, REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE)
       })
       test('bad instruction', async () => {
-        catchReversion(TX_HASH.BAD_INSTRUCTION.KOVAN, _network, REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE)
+        await catchReversion(TX_HASH.BAD_INSTRUCTION.KOVAN, _network, REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE)
       })
       test('special characters', async () => {
-        catchReversion(TX_HASH.SPECIAL_CHARACTERS.KOVAN, _network, REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE)
+        await catchReversion(TX_HASH.SPECIAL_CHARACTERS.KOVAN, _network, REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE)
       })
     })
     describe('goerli', () => {
@@ -216,24 +216,24 @@ describe('getRevertReason', () => {
       const _txHash = '0x123'
       const _network = 'mainnet'
       const _revertReason = 'Invalid transaction hash'
-      catchReversion(_txHash, _network, _revertReason)
+      await catchReversion(_txHash, _network, _revertReason)
     })
     test('invalid txHash - invalid characters', async () => {
       const _txHash = '0xzzz1798a2d0d21db18d6e45ca00f230160b05f172f6022aa138a0b605831d740'
       const _network = 'mainnet'
       const _revertReason = 'Invalid transaction hash'
-      catchReversion(_txHash, _network, _revertReason)
+      await catchReversion(_txHash, _network, _revertReason)
     })
     test('invalid txHash - no 0x prefix', async () => {
       const _txHash = 'aa6ea1798a2d0d21db18d6e45ca00f230160b05f172f6022aa138a0b605831d740'
       const _network = 'mainnet'
       const _revertReason = 'Invalid transaction hash'
-      catchReversion(_txHash, _network, _revertReason)
+      await catchReversion(_txHash, _network, _revertReason)
     })
     test('unknown network', async () => {
       const _network = 'test'
       const _revertReason = 'Not a valid network'
-      catchReversion(TX_HASH.SUCCESSFUL_TX.KOVAN, _network, _revertReason)
+      await catchReversion(TX_HASH.SUCCESSFUL_TX.KOVAN, _network, _revertReason)
     })
     // test('upercase network', async () => {
     //   const _network = 'MaInNeT'
