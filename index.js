@@ -13,6 +13,9 @@ async function getRevertReason (txHash, network = 'mainnet', blockNumber = undef
   network = network.toLowerCase()
   blockNumber = blockNumber || 'latest'
 
+  // Perform validation before defining a provider
+  await validateInputPreProvider(txHash, network)
+
   // If a web3 provider is passed in, wrap it in an ethers provider
   // A standard web3 provider will have `.version`, while an ethers will not
   if (customProvider && customProvider.version) {
@@ -20,8 +23,8 @@ async function getRevertReason (txHash, network = 'mainnet', blockNumber = undef
   }
   const provider = customProvider || ethers.getDefaultProvider(network)
 
-  // Validate the input
-  await validateInput(txHash, network, blockNumber, provider)
+  // Perform validation after defining a provider
+  await validateInputPostProvider(txHash, network, blockNumber, provider)
 
   // NOTE: If the txHash of a successful tx is is passed in here, the return will be an empty string ('')
   try {
@@ -43,7 +46,7 @@ async function getRevertReason (txHash, network = 'mainnet', blockNumber = undef
   }
 }
 
-async function validateInput(txHash, network, blockNumber, provider) {
+async function validateInputPreProvider(txHash, network) {
   // Only accept a valid txHash
   if (!(/^0x([A-Fa-f0-9]{64})$/.test(txHash)) || txHash.substring(0,2) !== '0x') {
     throw new Error('Invalid transaction hash')
@@ -54,7 +57,9 @@ async function validateInput(txHash, network, blockNumber, provider) {
   if (!networks.includes(network)) {
     throw new Error('Not a valid network')
   }
+}
 
+async function validateInputPostProvider(txHash, network, blockNumber, provider) {
   // NOTE: Unless the node exposes the Parity `trace` endpoints, it is not possible to get the revert
   // reason of a transaction on kovan. Because of this, the call will end up here and we will return a custom message.
   if (network === 'kovan') {
@@ -70,7 +75,7 @@ async function validateInput(txHash, network, blockNumber, provider) {
   // Validate the block number
   if (blockNumber !== 'latest') {
     const currentBlockNumber = await provider.getBlockNumber()
-    const blockNumber = Number(blockNumber)
+    blockNumber = Number(blockNumber)
 
     // The block cannot be in the future
     if (blockNumber >= currentBlockNumber) {
@@ -81,12 +86,12 @@ async function validateInput(txHash, network, blockNumber, provider) {
     if (blockNumber < currentBlockNumber - 128) {
       try {
         // Check to see if a provider has access to an archive node
-        const tx = await provider.getTransaction(txHash)
-        await provider.call(tx, blockNumber)
+        await provider.getBalance(ethers.constants.AddressZero, blockNumber)
       } catch (err) {
-        // NOTE: This error message is specific to Infura. Alchemy offers an Archive node by default, so an Alchemy node will never throw here.
-        const errMessage = 'project ID does not have access to archive state'
-        if (err.message.includes(errMessage)) {
+        const errCode = JSON.parse(err.responseText).error.code
+        // NOTE: This error code is specific to Infura. Alchemy offers an Archive node by default, so an Alchemy node will never throw here.
+        const infuraErrCode = -32002
+        if (errCode === infuraErrCode) {
           throw new Error('You cannot use a blocknumber that is older than 128 blocks. Please use a provider that uses a full archival node.')
         }
       }
