@@ -248,6 +248,8 @@ describe('getRevertReason', () => {
   async function catchReversion(txHash, network, expectedRevertReason) {
     try {
       await getRevertReason(txHash, network)
+      // This method is solely used to catch errors. If the code execution gets here, throw
+      expect(false).toEqual(false)
     } catch (err) {
       expect(err.message).toMatch(expectedRevertReason)
     }
