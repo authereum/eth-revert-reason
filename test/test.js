@@ -69,7 +69,11 @@ describe('getRevertReason', () => {
     FAILURE_WITH_NO_REVERT_REASON: '',
     OUT_OF_GAS: '',
     BAD_INSTRUCTION: '',
-    SPECIAL_CHARACTERS: 'Tried to read `uint64` from a `CBOR.Value` with majorType != 0'
+    SPECIAL_CHARACTERS: 'Tried to read `uint64` from a `CBOR.Value` with majorType != 0',
+    INVALID_TX_HASH: 'Invalid transaction hash',
+    NOT_VALID_NETWORK: 'Not a valid network',
+    FUTURE_BLOCK_NUMBER: 'You cannot use a blocknumber that has not yet happened',
+    ARCHIVE_NODE_REQUIRED: 'You cannot use a blocknumber that is older than 128 blocks. Please use a provider that uses a full archival node.',
   }
 
   describe('Happy Path', () => {
@@ -88,13 +92,13 @@ describe('getRevertReason', () => {
     describe('kovan', () => {
       const _network = 'kovan'
       test('authereum transaction', async () => {
-        expect(await getRevertReason(TX_HASH.FAILED_AUTHEREUM_TX.KOVAN, _network)).toEqual(REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE)
+        await expect(getRevertReason(TX_HASH.FAILED_AUTHEREUM_TX.KOVAN, _network)).rejects.toThrow(new Error(REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE))
       })
       test('random transaction', async () => {
-        expect(await getRevertReason(TX_HASH.FAILED_RANDOM_TX.KOVAN, _network)).toEqual(REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE)
+        await expect(getRevertReason(TX_HASH.FAILED_RANDOM_TX.KOVAN, _network)).rejects.toThrow(new Error(REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE))
       })
       test('failure with no revert reason', async () => {
-        expect(await getRevertReason(TX_HASH.NO_REVERT_MSG.KOVAN, _network)).toEqual(REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE)
+        await expect(getRevertReason(TX_HASH.NO_REVERT_MSG.KOVAN, _network)).rejects.toThrow(new Error(REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE))
       })
     })
     describe('goerli', () => {
@@ -153,16 +157,18 @@ describe('getRevertReason', () => {
     describe('kovan', () => {
       const _network = 'kovan'
       test('successful transaction', async () => {
-        expect(await getRevertReason(TX_HASH.SUCCESSFUL_TX.KOVAN, _network)).toEqual(REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE)
+        // NOTE: Successful transactions do not require parity trace to be enabled
+        expect(await getRevertReason(TX_HASH.SUCCESSFUL_TX.KOVAN, _network)).toEqual(REVERT_REASON.SUCCESSFUL_TX)
       })
       test('out of gas', async () => {
-        expect(await getRevertReason(TX_HASH.OUT_OF_GAS.KOVAN, _network)).toEqual(REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE)
+        // NOTE: Out of gas transactions do not require parity trace to be enabled
+        expect(await getRevertReason(TX_HASH.OUT_OF_GAS.KOVAN, _network)).toEqual(REVERT_REASON.OUT_OF_GAS)
       })
       test('bad instruction', async () => {
-        expect(await getRevertReason(TX_HASH.BAD_INSTRUCTION.KOVAN, _network)).toEqual(REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE)
+        await expect(getRevertReason(TX_HASH.BAD_INSTRUCTION.KOVAN, _network)).rejects.toThrow(new Error(REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE))
       })
       test('special characters', async () => {
-        expect(await getRevertReason(TX_HASH.SPECIAL_CHARACTERS.KOVAN, _network)).toEqual(REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE)
+        await expect(getRevertReason(TX_HASH.SPECIAL_CHARACTERS.KOVAN, _network)).rejects.toThrow(new Error(REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE))
       })
     })
     describe('goerli', () => {
@@ -212,14 +218,48 @@ describe('getRevertReason', () => {
     })
   })
   describe('other tests', () => {
+    test('invalid txHash - invalid length', async () => {
+      const _txHash = '0x123'
+      const _network = 'mainnet'
+      await expect(getRevertReason(_txHash, _network)).rejects.toThrow(new Error(REVERT_REASON.INVALID_TX_HASH))
+    })
+    test('invalid txHash - invalid characters', async () => {
+      const _txHash = '0xzzz1798a2d0d21db18d6e45ca00f230160b05f172f6022aa138a0b605831d740'
+      const _network = 'mainnet'
+      await expect(getRevertReason(_txHash, _network)).rejects.toThrow(new Error(REVERT_REASON.INVALID_TX_HASH))
+    })
+    test('invalid txHash - no 0x prefix', async () => {
+      const _txHash = 'aa6ea1798a2d0d21db18d6e45ca00f230160b05f172f6022aa138a0b605831d740'
+      const _network = 'mainnet'
+      await expect(getRevertReason(_txHash, _network)).rejects.toThrow(new Error(REVERT_REASON.INVALID_TX_HASH))
+    })
+    test('abnormal txHash - all upper case', async () => {
+      const _txHash = '0xF212CC42D0EDED75041225D71DA6C3A8348BDB9102F2B73434B480419D31D69A'
+      const _network = 'mainnet'
+      expect(await getRevertReason(_txHash, _network)).toEqual(REVERT_REASON.FAILED_RANDOM_TX)
+    })
     test('unknown network', async () => {
       const _network = 'test'
-      const _revertReason = 'Not a valid network'
-      expect(await getRevertReason(TX_HASH.SUCCESSFUL_TX.MAINNET, _network)).toEqual(_revertReason)
+      await expect(getRevertReason(TX_HASH.SUCCESSFUL_TX.KOVAN, _network)).rejects.toThrow(new Error(REVERT_REASON.NOT_VALID_NETWORK))
     })
     test('upercase network', async () => {
       const _network = 'MaInNeT'
       expect(await getRevertReason(TX_HASH.FAILED_AUTHEREUM_TX.MAINNET, _network)).toEqual(REVERT_REASON.FAILED_AUTHEREUM_TX)
     })
+    test('upercase network', async () => {
+      const _network = 'MaInNeT'
+      expect(await getRevertReason(TX_HASH.FAILED_AUTHEREUM_TX.MAINNET, _network)).toEqual(REVERT_REASON.FAILED_AUTHEREUM_TX)
+    })
+    test('future block number', async () => {
+      const _network = 'mainnet'
+      const _blockNumber = 999999999999
+      await expect(getRevertReason(TX_HASH.FAILED_AUTHEREUM_TX.MAINNET, _network, _blockNumber)).rejects.toThrow(new Error(REVERT_REASON.FUTURE_BLOCK_NUMBER))
+    })
+    test('early block number with no archive node', async () => {
+      const _network = 'mainnet'
+      const _blockNumber = 123
+      await expect(getRevertReason(TX_HASH.FAILED_AUTHEREUM_TX.MAINNET, _network, _blockNumber)).rejects.toThrow(new Error(REVERT_REASON.ARCHIVE_NODE_REQUIRED))
+    })
+    // TODO: Add alchemy tests
   })
 })
