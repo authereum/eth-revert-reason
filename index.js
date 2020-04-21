@@ -21,7 +21,7 @@ async function getRevertReason (txHash, network = 'mainnet', blockNumber = undef
   const provider = customProvider || ethers.getDefaultProvider(network)
 
   // Validate the input
-  validateInput(txHash, network, blockNumber, provider)
+  await validateInput(txHash, network, blockNumber, provider)
 
   // NOTE: If the txHash of a successful tx is is passed in here, the return will be an empty string ('')
   try {
