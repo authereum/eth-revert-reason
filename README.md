@@ -11,6 +11,12 @@
 npm install eth-revert-reason
 ```
 
+## Notes
+1. For now, this works consistently with [Infura](https://infura.io/) and [Alchemy](https://docs.alchemyapi.io/) providers. Any other providers that you pass in may not work.
+2. Because Kovan uses Parity exclusively, it is not possible to get the error message without a provider that exposes Parity's `trace` methods. Because of this, Kovan revert reasons require a custom provider to be passed in. Infura offers an "Archive node" package and Alchemy offers this by default.
+3. There are rare cases where a revert reason may be 'x' from the context of one block but it will be 'y' from the context of another block. This may cause inconsistencies.
+
+
 ## Getting started
 
 ```javascript
@@ -27,18 +33,12 @@ let network = 'kovan'
 console.log(await getRevertReason(txHash, network)) // Please use a provider that exposes the Parity trace methods to decode the revert reason
 ```
 
-## Notes
-1. Because Kovan uses Parity, it is not possible to get the error message without a provider that exposes Parity's `trace` methods. Because of this, Kovan revert reasons require a custom provider to be passed in.
-2. There are rare cases where a revert reason may be 'x' from the context of one block but it will be 'y' from the context of another block. This may cause inconsistencies.
-3. For now, this only works with Infura nodes.
-
 ## Future work
 The following features will be added over time:
 
-1. A better way to determine whether or not a node is full-archival.
+1. A better way to determine whether or not a node is full-archive.
 2. A better way to determine whether or not a node exposes Parity `trace` methods.
-3. Limit the number of calls made by the provider.
-4. Support providers other than Infura.
+3. Reduce the number of calls made by the provider.
 
 ## Test
 
