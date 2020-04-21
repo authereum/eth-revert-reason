@@ -166,8 +166,8 @@ describe('getRevertReason', () => {
       })
       test('bad instruction', async () => {
         // NOTE: Bad instruction transactions do not require parity trace to be enabled
-        await expect(getRevertReason(TX_HASH.BAD_INSTRUCTION.KOVAN, _network)).rejects.toThrow(new Error(REVERT_REASON.BAD_INSTRUCTION))
-      })
+        expect(await getRevertReason(TX_HASH.BAD_INSTRUCTION.KOVAN, _network)).toEqual(REVERT_REASON.BAD_INSTRUCTION)
+      )
       test('special characters', async () => {
         await expect(getRevertReason(TX_HASH.SPECIAL_CHARACTERS.KOVAN, _network)).rejects.toThrow(new Error(REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE))
       })
