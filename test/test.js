@@ -1,4 +1,5 @@
 const getRevertReason = require('../')
+const ethers = require('ethers')
 
 describe('getRevertReason', () => {
   const TX_HASH = {
@@ -74,6 +75,7 @@ describe('getRevertReason', () => {
     NOT_VALID_NETWORK: 'Not a valid network',
     FUTURE_BLOCK_NUMBER: 'You cannot use a blocknumber that has not yet happened',
     ARCHIVE_NODE_REQUIRED: 'You cannot use a blocknumber that is older than 128 blocks. Please use a provider that uses a full archival node.',
+    INSUFFICIENT_FUNDS: 'BA: Insufficient gas (token) for refund'
   }
 
   describe('Happy Path', () => {
@@ -260,6 +262,21 @@ describe('getRevertReason', () => {
       const _blockNumber = 123
       await expect(getRevertReason(TX_HASH.FAILED_AUTHEREUM_TX.MAINNET, _network, _blockNumber)).rejects.toThrow(new Error(REVERT_REASON.ARCHIVE_NODE_REQUIRED))
     })
-    // TODO: Add alchemy tests
+    test.only('get revert reason from the context of an early block', async () => {
+      const _network = 'mainnet'
+      // Revert reason from 'latest' context should be REVERT_REASON.FAILED_AUTHEREUM_TX
+      expect(await getRevertReason(TX_HASH.FAILED_AUTHEREUM_TX.MAINNET, _network)).toEqual(REVERT_REASON.FAILED_AUTHEREUM_TX)
+
+      // Revert reason from block 9892243 context should be REVERT_REASON.INSUFFICIENT_FUNDS
+      const _blockNumber = 9892243
+      const _provider = getAlchemyProvider(_network)
+      expect(await getRevertReason(TX_HASH.FAILED_AUTHEREUM_TX.MAINNET, _network, _blockNumber, _provider)).toEqual(REVERT_REASON.FAILED_AUTHEREUM_TX)
+      // await expect(getRevertReason(TX_HASH.FAILED_AUTHEREUM_TX.MAINNET, _network, _blockNumber, _provider)).rejects.toThrow(new Error(REVERT_REASON.INSUFFICIENT_FUNDS))
+    })
   })
 })
+
+function getAlchemyProvider(network) {
+  const rpcUrl = `https://eth-${network}.alchemyapi.io/jsonrpc/demo`
+  return new ethers.providers.JsonRpcProvider(rpcUrl)
+}

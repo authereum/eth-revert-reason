@@ -30,17 +30,7 @@ async function getRevertReason (txHash, network = 'mainnet', blockNumber = undef
   try {
     const tx = await provider.getTransaction(txHash)
     const code = await provider.call(tx, blockNumber)
-
-    // NOTE: `code` may end with 0's which will return a text string with empty whitespace characters
-    // This will truncate all 0s and set up the hex string as expected
-    let codeString = `0x${code.substr(138)}`.replace(/0+$/, '')
-
-    // If the codeString is an odd number of characters, add a trailing 0
-    if (codeString.length % 2 === 1) {
-      codeString += '0'
-    }
-
-    return ethers.utils.toUtf8String(codeString)
+    return decodeMessage(code, network)
   } catch (err) {
     throw  new Error('Unable to decode revert reason')
   }
@@ -97,6 +87,36 @@ async function validateInputPostProvider(txHash, network, blockNumber, provider)
       }
     }
   }
+}
+
+function decodeMessage(code, network) {
+
+    // NOTE: `code` may end with 0's which will return a text string with empty whitespace characters
+    // This will truncate all 0s and set up the hex string as expected
+    // NOTE: Parity (Kovan) returns in a different format than other clients
+    let codeString
+    const fnSelectorByteLength = 4
+    const dataOffsetByteLength = 32
+    const strLengthByteLength = 32
+    const strLengthStartPos = 2 + ((fnSelectorByteLength + dataOffsetByteLength) * 2)
+    const strDataStartPos = 2 + ((fnSelectorByteLength + dataOffsetByteLength + strLengthByteLength) * 2)
+
+    if (network === 'kovan') {
+      const strLengthHex = codeString.slice(strLengthStartPos).slice(0, strLengthByteLength * 2)
+      const strLengthInt = parseInt(`0x${strLengthHex}`, 16)
+      codeString = strDataStartPos + (strLengthInt * 2)
+    } else {
+      codeString = `0x${code.substr(138)}`.replace(/0+$/, '')
+    }
+
+    console.log('codeString', codeString)
+    // If the codeString is an odd number of characters, add a trailing 0
+    if (codeString.length % 2 === 1) {
+      codeString += '0'
+    }
+
+    return ethers.utils.toUtf8String(codeString)
+
 }
 
 module.exports = getRevertReason
