@@ -12,10 +12,11 @@ npm install eth-revert-reason
 ```
 
 ## Notes
-1. For now, this works consistently with [Infura](https://infura.io/) and [Alchemy](https://docs.alchemyapi.io/) providers. Any other providers that you pass in may not work.
+1. For now, this works consistently with the [Infura](https://infura.io/) and [Alchemy](https://docs.alchemyapi.io/) providers. Any other providers that you pass in may not work.
 2. Because Kovan uses Parity exclusively, it is not possible to get the error message without a provider that exposes Parity's `trace` methods. Because of this, Kovan revert reasons require a custom provider to be passed in. Infura offers an "Archive node" package and Alchemy offers this by default. _NOTE: Successful transactions and transactions that run out of gas do **not** need trace to be enabled and will return an empty string._
 3. There are rare cases where a revert reason may be 'x' from the context of one block but it will be 'y' from the context of another block. This may cause inconsistencies.
 4. This package relies on the ethers.js default provider. This provider may be subject to rate limits or inconsistencies. For consistent results, please pass in your own provider.
+5. Alchemy's provider v2 uses Geth.
 
 
 ## Getting started
@@ -40,6 +41,10 @@ The following features will be added over time:
 1. A better way to determine whether or not a node is full-archive.
 2. A better way to determine whether or not a node exposes Parity `trace` methods.
 3. Reduce the number of calls made by the provider.
+4. Use raw RPC calls instead of a library
+    - Will require unwrapping the provider from the library if provider is still a parameter
+        - Note: this would still require using the ethers default provider
+
 
 ## Test
 

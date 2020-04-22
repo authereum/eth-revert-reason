@@ -26,10 +26,9 @@ async function getRevertReason (txHash, network = 'mainnet', blockNumber = undef
   // Perform validation after defining a provider
   await validateInputPostProvider(txHash, network, blockNumber, provider)
 
-  // NOTE: If the txHash of a successful tx is is passed in here, the return will be an empty string ('')
   try {
     const tx = await provider.getTransaction(txHash)
-    const code = await provider.call(tx, blockNumber)
+    const code = await getCode(tx, network, blockNumber, provider)
     return decodeMessage(code, network)
   } catch (err) {
     throw  new Error('Unable to decode revert reason')
@@ -56,7 +55,7 @@ async function validateInputPostProvider(txHash, network, blockNumber, provider)
     try {
       // Mimic the call to validate if the provider exposes Parity `trace` methods
       const tx = await provider.getTransaction(txHash)
-      await provider.call(tx)
+      getCode(tx, network, blockNumber, provider)
     } catch (err) {
       throw new Error('Please use a provider that exposes the Parity trace methods to decode the revert reason')
     }
@@ -90,7 +89,6 @@ async function validateInputPostProvider(txHash, network, blockNumber, provider)
 }
 
 function decodeMessage(code, network) {
-
     // NOTE: `code` may end with 0's which will return a text string with empty whitespace characters
     // This will truncate all 0s and set up the hex string as expected
     // NOTE: Parity (Kovan) returns in a different format than other clients
@@ -102,14 +100,15 @@ function decodeMessage(code, network) {
     const strDataStartPos = 2 + ((fnSelectorByteLength + dataOffsetByteLength + strLengthByteLength) * 2)
 
     if (network === 'kovan') {
-      const strLengthHex = codeString.slice(strLengthStartPos).slice(0, strLengthByteLength * 2)
+      const strLengthHex = code.slice(strLengthStartPos).slice(0, strLengthByteLength * 2)
       const strLengthInt = parseInt(`0x${strLengthHex}`, 16)
-      codeString = strDataStartPos + (strLengthInt * 2)
+      const strDataEndPos = strDataStartPos + (strLengthInt * 2)
+      if (codeString === '0x') return ''
+      codeString = `0x${code.slice(strDataStartPos, strDataEndPos)}`
     } else {
       codeString = `0x${code.substr(138)}`.replace(/0+$/, '')
     }
 
-    console.log('codeString', codeString)
     // If the codeString is an odd number of characters, add a trailing 0
     if (codeString.length % 2 === 1) {
       codeString += '0'
@@ -117,6 +116,19 @@ function decodeMessage(code, network) {
 
     return ethers.utils.toUtf8String(codeString)
 
+}
+
+async function getCode(tx, network, blockNumber, provider) {
+  if (network === 'kovan') {
+    try {
+      // NOTE: The await is intentional in order for the catch to work
+      return await provider.call(tx, blockNumber)
+    } catch (err) {
+      return JSON.parse(err.responseText).error.data.substr(9)
+    }
+  } else {
+    return provider.call(tx, blockNumber)
+  }
 }
 
 module.exports = getRevertReason
