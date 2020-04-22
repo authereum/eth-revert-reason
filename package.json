@@ -29,6 +29,9 @@
     "Adam Hanna <adam.hanna@authereum.com>"
   ],
   "license": "MIT",
+  "bin": {
+    "getRevertReason": "cli.js"
+  },
   "dependencies": {
     "ethers": "^4.0.46"
   },

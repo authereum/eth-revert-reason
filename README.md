@@ -40,6 +40,7 @@ The following features will be added over time:
 1. A better way to determine whether or not a node is full-archive.
 2. A better way to determine whether or not a node exposes Parity `trace` methods.
 3. Reduce the number of calls made by the provider.
+4. Full CLI functionality.
 
 ## Test
 
