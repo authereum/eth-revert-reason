@@ -95,15 +95,12 @@ describe('getRevertReason', () => {
       const _network = 'kovan'
       test('authereum transaction', async () => {
         expect(await getRevertReason(TX_HASH.FAILED_AUTHEREUM_TX.KOVAN, _network)).toEqual(REVERT_REASON.FAILED_AUTHEREUM_TX)
-        // await expect(getRevertReason(TX_HASH.FAILED_RANDOM_TX.KOVAN, _network)).rejects.toThrow(new Error(REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE))
       })
       test('random transaction', async () => {
         expect(await getRevertReason(TX_HASH.FAILED_RANDOM_TX.KOVAN, _network)).toEqual(REVERT_REASON.FAILED_RANDOM_TX)
-        // await expect(getRevertReason(TX_HASH.FAILED_RANDOM_TX.KOVAN, _network)).rejects.toThrow(new Error(REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE))
       })
       test('failure with no revert reason', async () => {
         expect(await getRevertReason(TX_HASH.NO_REVERT_MSG.KOVAN, _network)).toEqual(REVERT_REASON.FAILURE_WITH_NO_REVERT_REASON)
-        // await expect(getRevertReason(TX_HASH.NO_REVERT_MSG.KOVAN, _network)).rejects.toThrow(new Error(REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE))
       })
     })
     describe('goerli', () => {
