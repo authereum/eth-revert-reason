@@ -4,26 +4,15 @@ const ethers = require('ethers')
  * Get the revert reason from just a transaction hash
  * @param {string} txHash - Hash of an Ethereum transaction
  * @param {string} network - Ethereum network name
- * @param {nunber} blockNumber - A block number to make the call from
- * @param {*} customProvider - Custom provider (Only ethers and web3 providers are supported at thsitime)
+ * @param {number} blockNumber - A block number to make the call from
+ * @param {*} customProvider - Custom provider (Only ethers and web3 providers are supported at this time)
  */
 
 async function getRevertReason (txHash, network = 'mainnet', blockNumber = undefined, customProvider = undefined) {
-  // Normalize the input params
-  network = network.toLowerCase()
-  blockNumber = blockNumber || 'latest'
+  ({ network, blockNumber } = normalizeInput(network, blockNumber))
 
-  // Perform validation before defining a provider
   await validateInputPreProvider(txHash, network)
-
-  // If a web3 provider is passed in, wrap it in an ethers provider
-  // A standard web3 provider will have `.version`, while an ethers will not
-  if (customProvider && customProvider.version) {
-    customProvider = new ethers.providers.Web3Provider(customProvider.currentProvider)
-  }
-  const provider = customProvider || ethers.getDefaultProvider(network)
-
-  // Perform validation after defining a provider
+  const provider = getProvider(customProvider)
   await validateInputPostProvider(txHash, network, blockNumber, provider)
 
   try {
@@ -31,7 +20,14 @@ async function getRevertReason (txHash, network = 'mainnet', blockNumber = undef
     const code = await getCode(tx, network, blockNumber, provider)
     return decodeMessage(code, network)
   } catch (err) {
-    throw  new Error('Unable to decode revert reason')
+    throw  new Error('Unable to decode revert reason.')
+  }
+}
+
+function normalizeInput(network, blockNumber) {
+  return {
+    network: network.toLowerCase(),
+    blockNumber: blockNumber || 'latest'
   }
 }
 
@@ -41,11 +37,19 @@ async function validateInputPreProvider(txHash, network) {
     throw new Error('Invalid transaction hash')
   }
 
-  // Only accept valid networks
   const networks = ['mainnet', 'kovan', 'goerli', 'ropsten', 'rinkeby']
   if (!networks.includes(network)) {
     throw new Error('Not a valid network')
   }
+}
+
+function getProvider(customProvider) {
+  // If a web3 provider is passed in, wrap it in an ethers provider
+  // A standard web3 provider will have `.version`, while an ethers will not
+  if (customProvider && customProvider.version) {
+    customProvider = new ethers.providers.Web3Provider(customProvider.currentProvider)
+  }
+  return customProvider || ethers.getDefaultProvider(network)
 }
 
 async function validateInputPostProvider(txHash, network, blockNumber, provider) {
@@ -53,11 +57,10 @@ async function validateInputPostProvider(txHash, network, blockNumber, provider)
   // reason of a transaction on kovan. Because of this, the call will end up here and we will return a custom message.
   if (network === 'kovan') {
     try {
-      // Mimic the call to validate if the provider exposes Parity `trace` methods
       const tx = await provider.getTransaction(txHash)
       getCode(tx, network, blockNumber, provider)
     } catch (err) {
-      throw new Error('Please use a provider that exposes the Parity trace methods to decode the revert reason')
+      throw new Error('Please use a provider that exposes the Parity trace methods to decode the revert reason.')
     }
   }
 
@@ -66,9 +69,8 @@ async function validateInputPostProvider(txHash, network, blockNumber, provider)
     const currentBlockNumber = await provider.getBlockNumber()
     blockNumber = Number(blockNumber)
 
-    // The block cannot be in the future
     if (blockNumber >= currentBlockNumber) {
-      throw new Error('You cannot use a blocknumber that has not yet happened')
+      throw new Error('You cannot use a blocknumber that has not yet happened.')
     }
 
     // A block older than 128 blocks needs access to an archive node
