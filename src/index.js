@@ -1,30 +1,35 @@
 const ethers = require('ethers')
+const toHex = require('to-hex')
+
+const rpcCalls = require('./rpcCalls')
 
 /**
  * Get the revert reason from just a transaction hash
  * @param {string} txHash - Hash of an Ethereum transaction
  * @param {string} network - Ethereum network name
  * @param {number} blockNumber - A block number to make the call from
- * @param {*} customProvider - Custom provider (Only ethers and web3 providers are supported at this time)
+ * @param {string} customRpcUri - URI of an Ethereum provider
  */
 
-async function getRevertReason (txHash, network = 'mainnet', blockNumber = undefined, customProvider = undefined) {
+async function getRevertReason (txHash, network = 'mainnet', blockNumber = undefined, customRpcUri = undefined) {
   ({ network, blockNumber } = normalizeInput(network, blockNumber))
 
   await validateInputPreProvider(txHash, network)
-  const provider = getProvider(customProvider)
-  await validateInputPostProvider(txHash, network, blockNumber, provider)
+  const rpcUri = getRpcUri(customRpcUri, network)
+  await validateInputPostProvider(txHash, network, blockNumber, rpcUri)
 
   try {
-    const tx = await provider.getTransaction(txHash)
-    const code = await getCode(tx, network, blockNumber, provider)
+    const unformattedTx = await rpcCalls.getTransactionByHash(rpcUri, txHash)
+    const tx = formatTx(unformattedTx)
+    const code = await getCode(rpcUri, tx, network, blockNumber)
     return decodeMessage(code, network)
   } catch (err) {
-    throw  new Error('Unable to decode revert reason.')
+    throw new Error('Unable to decode revert reason.')
   }
 }
 
 function normalizeInput(network, blockNumber) {
+  // TODO: Handle the case where blockNumber is not explicitly passed in
   return {
     network: network.toLowerCase(),
     blockNumber: blockNumber || 'latest'
@@ -43,18 +48,14 @@ async function validateInputPreProvider(txHash, network) {
   }
 }
 
-function getProvider(customProvider) {
-  // If a web3 provider is passed in, wrap it in an ethers provider
-  // A standard web3 provider will have `.version`, while an ethers will not
-  if (customProvider && customProvider.version) {
-    customProvider = new ethers.providers.Web3Provider(customProvider.currentProvider)
-  }
-  return customProvider || ethers.getDefaultProvider(network)
+function getRpcUri(customRpcUri, network) {
+  if (customRpcUri) return customRpcUri
+
+  const ethersProvider = ethers.getDefaultProvider(network)
+  return ethersProvider._providers[0].connection.url
 }
 
-async function validateInputPostProvider(txHash, network, blockNumber, provider) {
-  // NOTE: Unless the node exposes the Parity `trace` endpoints, it is not possible to get the revert
-  // reason of a transaction on kovan. Because of this, the call will end up here and we will return a custom message.
+async function validateInputPostProvider(txHash, network, blockNumber, rpcUri) {
   if (network === 'kovan') {
     try {
       const tx = await provider.getTransaction(txHash)
@@ -64,28 +65,27 @@ async function validateInputPostProvider(txHash, network, blockNumber, provider)
     }
   }
 
-  // Validate the block number
-  if (blockNumber !== 'latest') {
-    const currentBlockNumber = await provider.getBlockNumber()
-    blockNumber = Number(blockNumber)
+  if (blockNumber === 'latest') return
 
-    if (blockNumber >= currentBlockNumber) {
-      throw new Error('You cannot use a blocknumber that has not yet happened.')
-    }
+  const currentBlockNumber = await rpcCalls.getBlockNumber(rpcUri)
+  blockNumber = Number(blockNumber)
 
-    // A block older than 128 blocks needs access to an archive node
-    if (blockNumber < currentBlockNumber - 128) {
-      try {
-        // Check to see if a provider has access to an archive node
-        await provider.getBalance(ethers.constants.AddressZero, blockNumber)
-      } catch (err) {
-        const errCode = JSON.parse(err.responseText).error.code
-        // NOTE: This error code is specific to Infura. Alchemy offers an Archive node by default, so an Alchemy node will never throw here.
-        const infuraErrCode = -32002
-        if (errCode === infuraErrCode) {
-          throw new Error('You cannot use a blocknumber that is older than 128 blocks. Please use a provider that uses a full archival node.')
-        }
-      }
+  if (blockNumber >= currentBlockNumber) {
+    throw new Error('You cannot use a blocknumber that has not yet happened.')
+  }
+
+  await isArchiveNode(rpcUri, blockNumber)
+}
+
+async function isArchiveNode(rpcUri, blockNumber) {
+  try {
+    await rpcCalls.getBalance(rpcUri, blockNumber)
+  } catch (err) {
+    const errCode = JSON.parse(err.responseText).error.code
+    // NOTE: This error code is specific to Infura. Alchemy offers an Archive node by default, so an Alchemy node will never throw here.
+    const infuraErrCode = -32002
+    if (errCode === infuraErrCode) {
+      throw new Error('You cannot use a blocknumber that is older than 128 blocks. Please use a provider that uses a full archival node.')
     }
   }
 }
@@ -93,7 +93,7 @@ async function validateInputPostProvider(txHash, network, blockNumber, provider)
 function decodeMessage(code, network) {
     // NOTE: `code` may end with 0's which will return a text string with empty whitespace characters
     // This will truncate all 0s and set up the hex string as expected
-    // NOTE: Parity (Kovan) returns in a different format than other clients
+    // NOTE: Parity and OE return in a different format than other clients
     let codeString
     const fnSelectorByteLength = 4
     const dataOffsetByteLength = 32
@@ -120,16 +120,28 @@ function decodeMessage(code, network) {
 
 }
 
-async function getCode(tx, network, blockNumber, provider) {
+function formatTx(tx) {
+  return {
+    from: tx.from,
+    to: tx.to,
+    value: tx.value,
+    gas: tx.gas,
+    gasPrice: tx.gasPrice,
+    data: tx.input,
+    nonce: tx.nonce
+  }
+}
+
+async function getCode(rpcUri, tx, network, blockNumber) {
   if (network === 'kovan') {
     try {
       // NOTE: The await is intentional in order for the catch to work
-      return await provider.call(tx, blockNumber)
+      return await rpcCalls.call(rpcUri, tx, blockNumber)
     } catch (err) {
       return JSON.parse(err.responseText).error.data.substr(9)
     }
   } else {
-    return provider.call(tx, blockNumber)
+    return rpcCalls.call(rpcUri, tx, blockNumber)
   }
 }
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const getRevertReason = require('./')
+const getRevertReason = require('./src')
 
 const [,, ...args] = process.argv
 

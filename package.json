@@ -33,7 +33,9 @@
     "getRevertReason": "cli.js"
   },
   "dependencies": {
-    "ethers": "^4.0.46"
+    "ethers": "^4.0.46",
+    "isomorphic-fetch": "2.2.1",
+    "to-hex": "0.0.15"
   },
   "devDependencies": {
     "chai": "^4.2.0",

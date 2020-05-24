@@ -1,4 +1,4 @@
-const getRevertReason = require('../')
+const getRevertReason = require('../src')
 const ethers = require('ethers')
 
 describe('getRevertReason', () => {
@@ -62,10 +62,11 @@ describe('getRevertReason', () => {
     // NOTE: The real reason why this transaction failed is 'BA: Insufficient gas (token) for refund', but
     // since the address has made another transaction since then, the `call` from this new context will say
     // the auth key is invalid, since the signature is technically invalid for this state.
-    FAILED_AUTHEREUM_TX: 'LKMTA: Auth key is invalid',
+    FAILED_AUTHEREUM_TX: 'LKMTA: Login key is expired',
+    // FAILED_AUTHEREUM_TX: 'LKMTA: Auth key is invalid',
     FAILED_RANDOM_TX: 'Failed test',
-    UNABLE_TO_DECODE: 'Unable to decode revert reason',
-    PARTY_TRACE_NOT_AVAILABLE: 'Please use a provider that exposes the Parity trace methods to decode the revert reason',
+    UNABLE_TO_DECODE: 'Unable to decode revert reason.',
+    PARTY_TRACE_NOT_AVAILABLE: 'Please use a provider that exposes the Parity trace methods to decode the revert reason.',
     SUCCESSFUL_TX: '',
     FAILURE_WITH_NO_REVERT_REASON: '',
     OUT_OF_GAS: '',
@@ -73,7 +74,7 @@ describe('getRevertReason', () => {
     SPECIAL_CHARACTERS: 'Tried to read `uint64` from a `CBOR.Value` with majorType != 0',
     INVALID_TX_HASH: 'Invalid transaction hash',
     NOT_VALID_NETWORK: 'Not a valid network',
-    FUTURE_BLOCK_NUMBER: 'You cannot use a blocknumber that has not yet happened',
+    FUTURE_BLOCK_NUMBER: 'You cannot use a blocknumber that has not yet happened.',
     ARCHIVE_NODE_REQUIRED: 'You cannot use a blocknumber that is older than 128 blocks. Please use a provider that uses a full archival node.',
     INSUFFICIENT_FUNDS: 'BA: Insufficient gas (ETH) for refund'
   }
@@ -94,13 +95,13 @@ describe('getRevertReason', () => {
     describe('kovan', () => {
       const _network = 'kovan'
       test('authereum transaction', async () => {
-        expect(await getRevertReason(TX_HASH.FAILED_AUTHEREUM_TX.KOVAN, _network)).toEqual(REVERT_REASON.FAILED_AUTHEREUM_TX)
+        await expect(getRevertReason(TX_HASH.FAILED_AUTHEREUM_TX.KOVAN, _network)).rejects.toThrow(new Error(REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE))
       })
       test('random transaction', async () => {
-        expect(await getRevertReason(TX_HASH.FAILED_RANDOM_TX.KOVAN, _network)).toEqual(REVERT_REASON.FAILED_RANDOM_TX)
+        await expect(getRevertReason(TX_HASH.FAILED_RANDOM_TX.KOVAN, _network)).rejects.toThrow(new Error(REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE))
       })
       test('failure with no revert reason', async () => {
-        expect(await getRevertReason(TX_HASH.NO_REVERT_MSG.KOVAN, _network)).toEqual(REVERT_REASON.FAILURE_WITH_NO_REVERT_REASON)
+        await expect(getRevertReason(TX_HASH.NO_REVERT_MSG.KOVAN, _network)).rejects.toThrow(new Error(REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE))
       })
     })
     describe('goerli', () => {
@@ -159,16 +160,16 @@ describe('getRevertReason', () => {
     describe('kovan', () => {
       const _network = 'kovan'
       test('successful transaction', async () => {
-        expect(await getRevertReason(TX_HASH.SUCCESSFUL_TX.KOVAN, _network)).toEqual(REVERT_REASON.SUCCESSFUL_TX)
+        await expect(getRevertReason(TX_HASH.SUCCESSFUL_TX.KOVAN, _network)).rejects.toThrow(new Error(REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE))
       })
       test('out of gas', async () => {
-        expect(await getRevertReason(TX_HASH.OUT_OF_GAS.KOVAN, _network)).toEqual(REVERT_REASON.OUT_OF_GAS)
+        await expect(getRevertReason(TX_HASH.OUT_OF_GAS.KOVAN, _network)).rejects.toThrow(new Error(REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE))
       })
       test('bad instruction', async () => {
-        expect(await getRevertReason(TX_HASH.BAD_INSTRUCTION.KOVAN, _network)).toEqual(REVERT_REASON.BAD_INSTRUCTION)
+        await expect(getRevertReason(TX_HASH.BAD_INSTRUCTION.KOVAN, _network)).rejects.toThrow(new Error(REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE))
       })
       test('special characters', async () => {
-        expect(await getRevertReason(TX_HASH.SPECIAL_CHARACTERS.KOVAN, _network)).toEqual(REVERT_REASON.SPECIAL_CHARACTERS)
+        await expect(getRevertReason(TX_HASH.SPECIAL_CHARACTERS.KOVAN, _network)).rejects.toThrow(new Error(REVERT_REASON.PARTY_TRACE_NOT_AVAILABLE))
       })
     })
     describe('goerli', () => {
@@ -242,11 +243,11 @@ describe('getRevertReason', () => {
       const _network = 'test'
       await expect(getRevertReason(TX_HASH.SUCCESSFUL_TX.KOVAN, _network)).rejects.toThrow(new Error(REVERT_REASON.NOT_VALID_NETWORK))
     })
-    test('upercase network', async () => {
+    test('uppercase network', async () => {
       const _network = 'MaInNeT'
       expect(await getRevertReason(TX_HASH.FAILED_AUTHEREUM_TX.MAINNET, _network)).toEqual(REVERT_REASON.FAILED_AUTHEREUM_TX)
     })
-    test('upercase network', async () => {
+    test('uppercase network', async () => {
       const _network = 'MaInNeT'
       expect(await getRevertReason(TX_HASH.FAILED_AUTHEREUM_TX.MAINNET, _network)).toEqual(REVERT_REASON.FAILED_AUTHEREUM_TX)
     })
@@ -260,20 +261,19 @@ describe('getRevertReason', () => {
       const _blockNumber = 123
       await expect(getRevertReason(TX_HASH.FAILED_AUTHEREUM_TX.MAINNET, _network, _blockNumber)).rejects.toThrow(new Error(REVERT_REASON.ARCHIVE_NODE_REQUIRED))
     })
-    test('get revert reason from the context of an early block', async () => {
+    test.only('get revert reason from the context of an early block', async () => {
       const _network = 'mainnet'
       // Revert reason from 'latest' context should be REVERT_REASON.FAILED_AUTHEREUM_TX
       expect(await getRevertReason(TX_HASH.FAILED_AUTHEREUM_TX.MAINNET, _network)).toEqual(REVERT_REASON.FAILED_AUTHEREUM_TX)
 
       // Revert reason from block 9892243 context should be REVERT_REASON.INSUFFICIENT_FUNDS
       const _blockNumber = 9892243
-      const _provider = getAlchemyProvider(_network)
-      expect(await getRevertReason(TX_HASH.FAILED_AUTHEREUM_TX.MAINNET, _network, _blockNumber, _provider)).toEqual(REVERT_REASON.INSUFFICIENT_FUNDS)
+      const _rpcUri = getAlchemyRpcUri(_network)
+      expect(await getRevertReason(TX_HASH.FAILED_AUTHEREUM_TX.MAINNET, _network, _blockNumber, _rpcUri)).toEqual(REVERT_REASON.INSUFFICIENT_FUNDS)
     })
   })
 })
 
-function getAlchemyProvider(network) {
-  const rpcUrl = `https://eth-${network}.alchemyapi.io/v2/demo`
-  return new ethers.providers.JsonRpcProvider(rpcUrl)
+function getAlchemyRpcUri(network) {
+  return `https://eth-${network}.alchemyapi.io/v2/demo`
 }
