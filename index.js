@@ -12,7 +12,7 @@ async function getRevertReason (txHash, network = 'mainnet', blockNumber = undef
   ({ network, blockNumber } = normalizeInput(network, blockNumber))
 
   await validateInputPreProvider(txHash, network)
-  const provider = getProvider(customProvider)
+  const provider = getProvider(customProvider, network)
   await validateInputPostProvider(txHash, network, blockNumber, provider)
 
   try {
@@ -43,7 +43,7 @@ async function validateInputPreProvider(txHash, network) {
   }
 }
 
-function getProvider(customProvider) {
+function getProvider(customProvider, network) {
   // If a web3 provider is passed in, wrap it in an ethers provider
   // A standard web3 provider will have `.version`, while an ethers will not
   if (customProvider && customProvider.version) {

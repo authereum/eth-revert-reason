@@ -62,7 +62,7 @@ describe('getRevertReason', () => {
     // NOTE: The real reason why this transaction failed is 'BA: Insufficient gas (token) for refund', but
     // since the address has made another transaction since then, the `call` from this new context will say
     // the auth key is invalid, since the signature is technically invalid for this state.
-    FAILED_AUTHEREUM_TX: 'LKMTA: Auth key is invalid',
+    FAILED_AUTHEREUM_TX: 'LKMTA: Login key is expired',
     FAILED_RANDOM_TX: 'Failed test',
     UNABLE_TO_DECODE: 'Unable to decode revert reason',
     PARTY_TRACE_NOT_AVAILABLE: 'Please use a provider that exposes the Parity trace methods to decode the revert reason',
@@ -73,7 +73,7 @@ describe('getRevertReason', () => {
     SPECIAL_CHARACTERS: 'Tried to read `uint64` from a `CBOR.Value` with majorType != 0',
     INVALID_TX_HASH: 'Invalid transaction hash',
     NOT_VALID_NETWORK: 'Not a valid network',
-    FUTURE_BLOCK_NUMBER: 'You cannot use a blocknumber that has not yet happened',
+    FUTURE_BLOCK_NUMBER: 'You cannot use a blocknumber that has not yet happened.',
     ARCHIVE_NODE_REQUIRED: 'You cannot use a blocknumber that is older than 128 blocks. Please use a provider that uses a full archival node.',
     INSUFFICIENT_FUNDS: 'BA: Insufficient gas (ETH) for refund'
   }
